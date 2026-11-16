@@ -25,6 +25,14 @@ On the test page:
 - Use the **Prices** dropdown to switch a store's `priceMode` live.
 - Click **New customer** to start a fresh chat.
 
+## Voice notes
+
+Customers can send voice notes (up to 30 seconds). Sarvam AI, which is built for Hindi and Hinglish, turns the audio into Roman-script text ("om half hai kya"). The bot then answers it exactly like a typed message.
+
+- Put `SARVAM_API_KEY` in `.env` (get a key at dashboard.sarvam.ai). Without it, voice notes get a polite "please type instead" reply.
+- On the test page, tap 🎤 to record and tap again to send. The browser will ask for mic permission once.
+- Phase 2: the WhatsApp webhook downloads the voice note and calls the same `transcribe()` (`src/voice.ts`) and then `handleMessage()`.
+
 ## How it works
 
 ```

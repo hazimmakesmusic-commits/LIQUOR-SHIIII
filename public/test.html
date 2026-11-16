@@ -20,6 +20,9 @@
   form { display:flex; gap:8px; padding:10px 16px; background:#f0f2f5; }
   input { flex:1; font:inherit; padding:10px 14px; border-radius:20px; border:1px solid #ccc; min-width:0; }
   form button { font:inherit; padding:0 18px; border-radius:20px; border:0; background:var(--bar); color:#fff; }
+  #mic { padding:0 14px; font-size:18px; }
+  #mic.rec { background:#d93025; animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity:.6; } }
   #samples { display:flex; gap:6px; flex-wrap:wrap; padding:0 16px 8px; background:#f0f2f5; }
   #samples button { font-size:12px; border:1px solid #ccc; background:#fff; border-radius:12px; padding:3px 10px; cursor:pointer; }
 </style>
@@ -33,7 +36,7 @@
 </header>
 <div id="log" aria-live="polite"></div>
 <div id="samples"></div>
-<form id="f"><input id="t" autocomplete="off" placeholder="Type like a customer… e.g. OM half hai?" aria-label="Message"><button>Send</button></form>
+<form id="f"><input id="t" autocomplete="off" placeholder="Type like a customer… e.g. OM half hai?" aria-label="Message"><button>Send</button><button id="mic" type="button" aria-label="Record voice note">🎤</button></form>
 <script>
 const $ = (id) => document.getElementById(id);
 const samples = ["haan", "OM half hai?", "2 full BP aur 4 KF strong", "Black Dog hai kya", "hold kar do", "6 log, 5000 budget, whisky aur beer", "Jameson kaisi hoti hai?", "ghar pe delivery milegi?"];
@@ -67,6 +70,36 @@ $("mode").onchange = async () => {
   add(`(Store priceMode switched to "${$("mode").value}")`, "bot typing");
 };
 $("reset").onclick = reset;
+
+// Voice note: tap to record, tap again to send (auto-stops at 30s, Sarvam's limit).
+let rec = null;
+$("mic").onclick = async () => {
+  if (rec) return rec.stop();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { return add("Mic permission nahi mili. Browser me mic allow karein.", "bot typing"); }
+  const chunks = [];
+  rec = new MediaRecorder(stream);
+  rec.ondataavailable = (e) => chunks.push(e.data);
+  const timer = setTimeout(() => rec?.stop(), 30_000);
+  rec.onstop = async () => {
+    clearTimeout(timer);
+    stream.getTracks().forEach((t) => t.stop());
+    const type = rec.mimeType || "audio/webm";
+    rec = null;
+    $("mic").classList.remove("rec"); $("mic").setAttribute("aria-label", "Record voice note");
+    const me = add("🎤 voice note…", "me");
+    const wait = add("sun raha hoon…", "bot typing");
+    try {
+      const r = await fetch(`/api/voice?storeId=${encodeURIComponent($("store").value)}&phone=${encodeURIComponent(phone)}`, { method: "POST", headers: { "Content-Type": type }, body: new Blob(chunks, { type }) });
+      const j = await r.json();
+      if (j.transcript) me.textContent = "🎤 " + j.transcript;
+      wait.className = "msg bot"; wait.textContent = j.reply ?? j.error;
+    } catch { wait.textContent = "Server not reachable"; }
+  };
+  rec.start();
+  $("mic").classList.add("rec"); $("mic").setAttribute("aria-label", "Stop and send voice note");
+};
 samples.forEach((s) => { const b = document.createElement("button"); b.type = "button"; b.textContent = s; b.onclick = () => send(s); $("samples").append(b); });
 loadStores().then(reset);
 </script>
