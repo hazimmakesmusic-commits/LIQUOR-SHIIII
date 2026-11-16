@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Every table carries storeId: one DB serves many stores (multi-tenant).
+
+model Store {
+  id        String @id
+  name      String
+  priceMode String @default("full") // "full" | "totals_only" | "none"
+  openHour  Int    @default(10) // IST, 24h
+  closeHour Int    @default(22)
+
+  items        InventoryItem[]
+  brandInfo    BrandInfo[]
+  customers    Customer[]
+  reservations Reservation[]
+  dryDays      DryDay[]
+  demand       DemandEvent[]
+}
+
+model InventoryItem {
+  id       Int    @id @default(autoincrement())
+  storeId  String
+  brand    String
+  category String // whisky | rum | vodka | beer | gin | wine
+  sizeMl   Int
+  priceInr Int
+  qty      Int
+  tier     String // budget | mid | premium
+  store    Store  @relation(fields: [storeId], references: [id])
+  holds    ReservationItem[]
+
+  @@unique([storeId, brand, sizeMl])
+}
+
+model BrandInfo {
+  id         Int    @id @default(autoincrement())
+  storeId    String
+  brand      String
+  aliases    String // pipe-separated slang, e.g. "om|monk"
+  origin     String
+  tasteNotes String
+  howToDrink String
+  funFact    String
+  store      Store  @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, brand])
+}
+
+model Customer {
+  id           Int      @id @default(autoincrement())
+  storeId      String
+  phone        String
+  ageConfirmed Boolean  @default(false)
+  lastItems    String   @default("[]") // JSON of last enquired items, so "reserve kar do" works
+  createdAt    DateTime @default(now())
+  store        Store    @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, phone])
+}
+
+model Reservation {
+  id        Int      @id @default(autoincrement())
+  storeId   String
+  phone     String
+  status    String   @default("active") // active | picked_up | cancelled (expiry is by expiresAt)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id])
+  items     ReservationItem[]
+}
+
+model ReservationItem {
+  id            Int           @id @default(autoincrement())
+  storeId       String
+  reservationId Int
+  itemId        Int
+  qty           Int
+  reservation   Reservation   @relation(fields: [reservationId], references: [id])
+  item          InventoryItem @relation(fields: [itemId], references: [id])
+}
+
+model DryDay {
+  id      Int    @id @default(autoincrement())
+  storeId String
+  date    String // YYYY-MM-DD (IST)
+  reason  String
+  store   Store  @relation(fields: [storeId], references: [id])
+
+  @@unique([storeId, date])
+}
+
+// Every stock enquiry outcome; Phase 3 builds the missed-demand report from this.
+model DemandEvent {
+  id        Int      @id @default(autoincrement())
+  storeId   String
+  brand     String
+  sizeMl    Int?
+  outcome   String // in_stock | low | out_of_stock
+  createdAt DateTime @default(now())
+  store     Store    @relation(fields: [storeId], references: [id])
+}

@@ -1,0 +1,65 @@
+brand,category,size_ml,price_inr,qty,tier
+Officer's Choice,whisky,180,130,40,budget
+Officer's Choice,whisky,750,500,20,budget
+8PM,whisky,750,480,15,budget
+McDowell's No.1,whisky,180,150,30,budget
+McDowell's No.1,whisky,375,300,18,budget
+McDowell's No.1,whisky,750,600,22,budget
+Imperial Blue,whisky,180,160,35,budget
+Imperial Blue,whisky,375,320,20,budget
+Imperial Blue,whisky,750,640,25,budget
+Royal Stag,whisky,180,180,40,mid
+Royal Stag,whisky,375,350,25,mid
+Royal Stag,whisky,750,700,30,mid
+Sterling Reserve B7,whisky,750,750,10,mid
+Royal Challenge,whisky,750,760,8,mid
+Blenders Pride,whisky,180,280,20,mid
+Blenders Pride,whisky,375,560,12,mid
+Blenders Pride,whisky,750,1100,18,mid
+Signature,whisky,750,1150,2,mid
+Antiquity Blue,whisky,750,1200,6,mid
+100 Pipers,whisky,750,1450,7,premium
+Teacher's Highland Cream,whisky,750,1750,5,premium
+Ballantine's Finest,whisky,750,1750,4,premium
+Johnnie Walker Red Label,whisky,750,1950,9,premium
+Black Dog Centenary,whisky,750,2100,0,premium
+Jameson,whisky,750,2300,6,premium
+Johnnie Walker Black Label,whisky,750,3300,5,premium
+Jack Daniel's,whisky,750,3300,1,premium
+Indri,whisky,750,3300,3,premium
+Paul John Brilliance,whisky,750,3500,2,premium
+Chivas Regal 12,whisky,750,3600,4,premium
+Amrut Fusion,whisky,750,4500,2,premium
+Glenfiddich 12,whisky,750,4800,3,premium
+Old Monk,rum,180,140,50,budget
+Old Monk,rum,375,270,30,budget
+Old Monk,rum,750,530,35,budget
+McDowell's No.1 Celebration,rum,750,500,20,budget
+Bacardi Carta Blanca,rum,750,1000,10,mid
+Bacardi Black,rum,750,1000,0,mid
+Romanov,vodka,750,500,12,budget
+White Mischief,vodka,750,550,10,budget
+Magic Moments,vodka,180,170,25,budget
+Magic Moments,vodka,375,330,15,budget
+Magic Moments,vodka,750,650,20,budget
+Smirnoff,vodka,750,950,12,mid
+Absolut,vodka,750,2000,6,premium
+Grey Goose,vodka,750,4500,2,premium
+Blue Riband,gin,750,600,6,budget
+Greater Than,gin,750,1200,8,mid
+Gordon's,gin,750,1700,5,mid
+Bombay Sapphire,gin,750,2300,4,premium
+Tanqueray,gin,750,2700,0,premium
+Hapusa,gin,750,3700,2,premium
+Kingfisher Premium,beer,650,160,120,budget
+Kingfisher Strong,beer,650,170,100,budget
+Kingfisher Ultra,beer,650,200,40,mid
+Tuborg Strong,beer,650,180,60,budget
+Carlsberg Elephant,beer,650,200,30,mid
+Budweiser,beer,650,220,50,mid
+Bira 91 White,beer,650,220,24,mid
+Heineken,beer,650,230,0,premium
+Sula Shiraz Cabernet,wine,750,900,10,mid
+Fratelli Classic Sangiovese,wine,750,1000,6,mid
+Jacob's Creek Shiraz Cabernet,wine,750,1600,4,premium
+Grover Zampa La Reserve,wine,750,1700,2,premium
