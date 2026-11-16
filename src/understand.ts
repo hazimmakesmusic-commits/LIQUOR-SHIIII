@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { parseItems, parsePegs, tokenize } from "./slang.js";
+import { parseItems, parsePegs, wordsToDigits } from "./slang.js";
 import { CATEGORIES, type CatalogEntry, type Category, type Understanding } from "./types.js";
 
 export const MODEL = process.env.LLM_MODEL || "claude-opus-5-5";
@@ -82,10 +82,11 @@ export async function understand(text: string, catalog: CatalogEntry[], context 
 }
 
 /** Offline fallback: regexes + slang parser. Good enough for clear messages; Claude handles the messy ones. */
-export function ruleBased(text: string, catalog: CatalogEntry[]): Understanding {
-  const t = tokenize(text).join(" ");
+export function ruleBased(raw: string, catalog: CatalogEntry[]): Understanding {
+  const text = wordsToDigits(raw); // already lowercased and tokenized
+  const t = text;
   const items = parseItems(text, catalog).map((i) => ({ ...i, category: (catalog.find((c) => c.brand === i.brand)?.category as Category) ?? null }));
-  const budget = t.match(/(?:rs|inr|budget|rupees?|rupaye)\s*(\d{3,6})|(\d{3,6})\s*(?:rs|rupees?|rupaye|ka budget|budget|me|mein|tak)\b/) ?? text.match(/₹\s*(\d{3,6})/);
+  const budget = t.match(/(?:rs|inr|budget|rupees?|rupaye)\s*(\d{3,6})|(\d{3,6})\s*(?:rs|rupees?|rupaye|(?:ka|ke|ki)\s*budget|budget|me|mein|tak)\b/) ?? raw.match(/₹\s*(\d{3,6})/);
   const head = t.match(/(\d{1,3})\s*(?:log|logo|logon|people|persons?|bande|banda|jan|friends|dost|guests?|members?)\b/);
   const preferences = CATEGORIES.filter((c) => new RegExp(`\\b${c === "whisky" ? "whiske?y" : c}s?\\b`).test(t));
   const level = /\b(light|halka|halki|thoda)\b/.test(t) ? "light" : /\b(long night|lambi|raat bhar|all night|full night)\b/.test(t) ? "long_night" : null;
@@ -105,6 +106,6 @@ export function ruleBased(text: string, catalog: CatalogEntry[]): Understanding 
     preferences,
     level,
     drinksPerPerson: parsePegs(text),
-    question: intent === "trivia" ? text : null,
+    question: intent === "trivia" ? raw : null,
   };
 }

@@ -81,6 +81,44 @@ export function parseItems(text: string, catalog: CatalogEntry[]): ItemRequest[]
   });
 }
 
+// Spoken numbers (voice notes come back as words, not digits).
+const UNITS: Record<string, number> = {
+  ek: 1, do: 2, teen: 3, char: 4, chaar: 4, paanch: 5, panch: 5, chhah: 6, chhe: 6, chah: 6, chheh: 6, che: 6,
+  saat: 7, aath: 8, nau: 9, das: 10, gyarah: 11, barah: 12, pandrah: 15, bees: 20, pachees: 25, tees: 30,
+  chalis: 40, pachas: 50, pachaas: 50, dedh: 1.5, dhai: 2.5, one: 1, two: 2, three: 3, four: 4, five: 5,
+  six: 6, seven: 7, eight: 8, nine: 9, ten: 10, twenty: 20,
+};
+const MULTS: Record<string, number> = { sau: 100, hundred: 100, hazaar: 1000, hazar: 1000, hajar: 1000, hajaar: 1000, thousand: 1000 };
+const HALF = new Set(["saade", "saadhe", "sade", "sadhe"]);
+// "do" also means "give" ("de do"); only read it as 2 before a multiplier or a people word.
+const PEOPLE = /^(log|logo|logon|bande|banda|jan|dost|friends|people|ladke|ladkiyan|ladkiya|guests?)$/;
+
+/** "chhah hazaar ke budget, do log" -> "6000 ke budget 2 log". Digits pass through; "5 hazaar" -> "5000". */
+export function wordsToDigits(text: string): string {
+  const toks = tokenize(text);
+  const out: string[] = [];
+  for (let i = 0; i < toks.length; ) {
+    let total = 0, cur: number | null = null, half = 0, lastMult = Infinity, j = i;
+    for (; j < toks.length; j++) {
+      const tok = toks[j];
+      // After "do hazaar", only a smaller part continues the same number ("paanch sau"), not a new "teen hazaar".
+      if (total > 0 && cur === null && (HALF.has(tok) || MULTS[toks[j + 1]] >= lastMult)) break;
+      const unit = tok in UNITS ? UNITS[tok] : /^\d+$/.test(tok) && toks[j + 1] in MULTS ? Number(tok) : undefined;
+      if (HALF.has(tok) && cur === null && !half && toks[j + 1] in UNITS) half = 0.5;
+      else if (unit !== undefined && cur === null) cur = unit + half, half = 0;
+      else if (tok in MULTS && cur !== null) total += cur * MULTS[tok], lastMult = MULTS[tok], cur = null;
+      else break;
+    }
+    const n = total + (cur ?? 0);
+    const loneDo = j === i + 1 && toks[i] === "do" && !PEOPLE.test(toks[j] ?? "");
+    if (j > i && n > 0 && !loneDo) {
+      out.push(String(n));
+      i = j;
+    } else out.push(toks[i++]);
+  }
+  return out.join(" ");
+}
+
 /** "4 large peg each" -> 4 drinks (1 drink = 60ml large peg). Null if no pegs mentioned. */
 export function parsePegs(text: string): number | null {
   const m = tokenize(text).join(" ").match(/(\d+)\s*(small|large|patiala)?\s*pegs?/);

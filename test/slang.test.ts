@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { parse } from "csv-parse/sync";
-import { parseItems, parsePegs } from "../src/slang.js";
+import { parseItems, parsePegs, wordsToDigits } from "../src/slang.js";
 import { ruleBased } from "../src/understand.js";
 import type { CatalogEntry } from "../src/types.js";
 
@@ -64,4 +64,24 @@ test("rule-based intents", () => {
   assert.equal(ruleBased("2 full BP hold kar do", catalog).intent, "reserve");
   assert.equal(ruleBased("Jameson kaisi hoti hai", catalog).intent, "trivia");
   assert.equal(ruleBased("hello", catalog).intent, "other");
+});
+
+test("spoken numbers from voice notes become digits", () => {
+  assert.equal(wordsToDigits("chhah hazaar ke budget mein"), "6000 ke budget mein");
+  assert.equal(wordsToDigits("do hazaar paanch sau"), "2500");
+  assert.equal(wordsToDigits("dedh hazaar, saadhe teen hazaar, 5 hazaar"), "1500 3500 5000");
+  assert.equal(wordsToDigits("hum do log hain"), "hum 2 log hain");
+  assert.equal(wordsToDigits("BP full de do"), "bp full de do"); // "do" = give
+  assert.equal(wordsToDigits("2 full BP"), "2 full bp");
+});
+
+test("the real voice note: 6 people, 6000 budget, beer", () => {
+  const u = ruleBased(
+    "Toh hum chhah log hain, office ki party hai aur jismein se chaar ladkiyan hain aur jismein se do bas beer peeti hain. So chhah hazaar ke budget mein kya aa sakta hai?",
+    catalog,
+  );
+  assert.equal(u.intent, "budget_plan");
+  assert.equal(u.headcount, 6);
+  assert.equal(u.budgetInr, 6000);
+  assert.ok(u.preferences.includes("beer"));
 });
