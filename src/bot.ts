@@ -84,5 +84,5 @@ export async function handleMessage(storeId: string, phone: string, text: string
     default:
       reply = HELP;
   }
-  return status.note ? `${status.note}\n\n${reply}` : reply;
+  return status.note ? `${reply}\n\n${status.note}` : reply;
 }
