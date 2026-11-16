@@ -6,7 +6,7 @@ import { syncInventory } from "../src/inventory.js";
 
 const STORES = [
   { id: "saket", name: "Saket Wine Shop", priceMode: "full" },
-  { id: "gk2", name: "GK-2 Liquor Point", priceMode: "totals_only" },
+  { id: "gk2", name: "GK-2 Liquor Point", priceMode: "full" },
 ];
 
 // Fixed national dry days only. Add Delhi Excise's notified list (festivals, elections) each year.
