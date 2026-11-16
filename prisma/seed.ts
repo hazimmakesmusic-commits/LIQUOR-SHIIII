@@ -15,6 +15,12 @@ const DRY_DAYS = [
   ["2027-01-26", "Republic Day"], ["2027-08-15", "Independence Day"], ["2027-10-02", "Gandhi Jayanti"],
 ];
 
+// Production start runs this with --if-empty: seed demo data on the very first boot only, never over real data.
+if (process.argv.includes("--if-empty") && (await db.store.count())) {
+  console.log("Database already has stores; skipping seed.");
+  process.exit(0);
+}
+
 const brandInfo: Record<string, string>[] = parse(await readFile("data/brand_info.csv", "utf8"), { columns: true, trim: true });
 
 for (const s of STORES) {

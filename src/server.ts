@@ -3,11 +3,40 @@ import { db } from "./db.js";
 import { handleMessage } from "./bot.js";
 import { llm, MODEL } from "./understand.js";
 import { MAX_VOICE_SECONDS, transcribe, VoiceError } from "./voice.js";
+import { extractMessages, processMessage, verifySignature } from "./whatsapp.js";
 
 const PRICE_MODES = ["full", "totals_only", "none"];
 const app = express();
+
+// --- WhatsApp webhook (Meta). Registered before express.json(): the signature is checked on the raw bytes.
+app.get("/webhook/whatsapp", (req, res) => {
+  const token = process.env.WHATSAPP_VERIFY_TOKEN;
+  if (req.query["hub.mode"] === "subscribe" && token && req.query["hub.verify_token"] === token) res.send(String(req.query["hub.challenge"]));
+  else res.sendStatus(403);
+});
+
+app.post("/webhook/whatsapp", express.raw({ type: "application/json", limit: "1mb" }), (req, res) => {
+  const secret = process.env.WHATSAPP_APP_SECRET;
+  if (!secret || !Buffer.isBuffer(req.body) || !verifySignature(req.body, req.header("x-hub-signature-256"), secret)) return res.sendStatus(401);
+  res.sendStatus(200); // answer Meta at once; replies go out separately
+  let body: unknown;
+  try {
+    body = JSON.parse(req.body.toString("utf8"));
+  } catch {
+    return;
+  }
+  for (const msg of extractMessages(body)) processMessage(msg).catch((err) => console.error("WhatsApp reply failed:", err));
+});
+
+// --- Test page + store settings. Once online, ADMIN_PASSWORD locks them (browser asks for it; any username).
+app.use(["/test", "/api"], (req, res, next) => {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) return next();
+  const [, b64 = ""] = (req.headers.authorization ?? "").split(" ");
+  if (Buffer.from(b64, "base64").toString().split(":").slice(1).join(":") === password) return next();
+  res.set("WWW-Authenticate", 'Basic realm="Liquor bot"').status(401).send("Password required");
+});
 app.use(express.json());
-app.use(express.static("public"));
 
 app.get("/test", (_req, res) => res.sendFile("test.html", { root: "public" }));
 
@@ -59,4 +88,7 @@ app.listen(port, () => {
   console.log(`Liquor bot on http://localhost:${port}/test`);
   console.log(llm ? `Language understanding: Claude (${MODEL})` : "No ANTHROPIC_API_KEY: using the offline rule-based parser");
   console.log(process.env.SARVAM_API_KEY ? "Voice notes: on (Sarvam AI)" : "No SARVAM_API_KEY: voice notes are off");
+  const wa = ["WHATSAPP_TOKEN", "WHATSAPP_APP_SECRET", "WHATSAPP_VERIFY_TOKEN"].filter((k) => !process.env[k]);
+  console.log(wa.length ? `WhatsApp: off (missing ${wa.join(", ")})` : "WhatsApp: on (webhook at /webhook/whatsapp)");
+  if (!wa.length && !process.env.ADMIN_PASSWORD) console.warn("⚠️  Set ADMIN_PASSWORD before going online, or anyone can open /test and change prices.");
 });

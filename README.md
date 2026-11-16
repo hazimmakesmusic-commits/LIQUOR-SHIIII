@@ -83,11 +83,29 @@ public/test.html   browser test chat
 test/              node:test unit tests
 ```
 
+## WhatsApp (Phase 2)
+
+Customers message the shop's WhatsApp number (text or voice note) and get the same replies as on `/test`.
+
+- **Webhook:** `GET/POST /webhook/whatsapp`. Every POST is checked against Meta's `X-Hub-Signature-256` using `WHATSAPP_APP_SECRET`; unsigned or forged requests get 401.
+- **Routing:** each store has a `waPhoneNumberId`. Link one with `npm run link-whatsapp -- <storeId> <Phone Number ID>`. One number = one store.
+- **Voice notes:** downloaded from Meta, transcribed by Sarvam, then answered like text. Other message types get a polite "text or voice only".
+- **Admin lock:** set `ADMIN_PASSWORD` before going online, so only you can open `/test` or change prices.
+- **Online:** `npm start` creates/updates the database, seeds demo data only on the very first boot, and starts the server. It reads keys from the host's environment variables, not `.env`.
+
+### Deploy (Railway)
+
+1. railway.com → New Project → Deploy from GitHub → this repo, branch `claude/charming-pasteur-pw0kxp`.
+2. Add a **Volume** mounted at `/data` (keeps the database across restarts).
+3. Variables: `DATABASE_URL=file:/data/prod.db`, plus `ANTHROPIC_API_KEY`, `SARVAM_API_KEY`, `WHATSAPP_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `ADMIN_PASSWORD`.
+4. Settings → Networking → Generate Domain. Your webhook URL is `https://<that domain>/webhook/whatsapp`.
+5. In Meta (developers.facebook.com → your app → WhatsApp → Configuration): Callback URL = the webhook URL, Verify token = your `WHATSAPP_VERIFY_TOKEN`, then subscribe to the **messages** field.
+6. Link the number to a store from the Railway shell: `npm run link-whatsapp -- saket <Phone Number ID>`.
+
 ## Where later phases plug in
 
-- **Phase 2 (WhatsApp):** add a webhook route that maps the incoming business phone number to a `storeId` (add a column on `Store`) and calls `handleMessage()`. Nothing else changes.
 - **Phase 3 (owner dashboard):** `DemandEvent` already logs every enquiry with its outcome (`in_stock` / `low` / `out_of_stock` / `not_stocked`). Missed demand is a query on that table. Reservations are in `Reservation`.
-- **Phase 4 (onboarding/subscriptions):** a store is one `Store` row plus an inventory import.
+- **Phase 4 (onboarding/subscriptions):** a store is one `Store` row, an inventory import, and `npm run link-whatsapp`.
 
 ## Before going live
 

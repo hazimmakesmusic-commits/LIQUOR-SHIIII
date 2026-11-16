@@ -15,6 +15,7 @@ model Store {
   priceMode String @default("full") // "full" | "totals_only" | "none"
   openHour  Int    @default(10) // IST, 24h
   closeHour Int    @default(22)
+  waPhoneNumberId String? // one store per number, enforced by npm run link-whatsapp; WhatsApp Cloud API "Phone Number ID" that routes messages to this store
 
   items        InventoryItem[]
   brandInfo    BrandInfo[]
