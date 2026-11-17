@@ -93,7 +93,17 @@ Customers message the shop's WhatsApp number (text or voice note) and get the sa
 - **Admin lock:** set `ADMIN_PASSWORD` before going online, so only you can open `/test` or change prices.
 - **Online:** `npm start` creates/updates the database, seeds demo data only on the very first boot, and starts the server. It reads keys from the host's environment variables, not `.env`.
 
-### Deploy (Railway)
+### Free setup (your laptop + ngrok)
+
+Costs nothing: Meta's test number is free, replies to customers who message first are free, and ngrok's free plan gives one fixed web address. The laptop must stay on and online.
+
+1. Put the WhatsApp values and `ADMIN_PASSWORD` in `.env` (`open -e .env` on a Mac).
+2. Terminal 1: `caffeinate -i npm run dev` (`caffeinate` stops the Mac from sleeping).
+3. Terminal 2: `ngrok http --url=<your free ngrok domain> 3000`.
+4. In Meta, set the Callback URL to `https://<your free ngrok domain>/webhook/whatsapp` and the Verify token to your `WHATSAPP_VERIFY_TOKEN`, then subscribe to **messages**.
+5. `npm run link-whatsapp -- saket <Phone Number ID>`.
+
+### Deploy (Railway, paid, runs 24/7)
 
 1. railway.com → New Project → Deploy from GitHub → this repo, branch `claude/charming-pasteur-pw0kxp`.
 2. Add a **Volume** mounted at `/data` (keeps the database across restarts).
